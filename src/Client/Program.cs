@@ -2,6 +2,8 @@
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using IdentityModel.Client;
+using Newtonsoft.Json.Linq;
 
 namespace Client
 {
@@ -12,10 +14,10 @@ namespace Client
             // discover endpoint from metadata
             var client = new HttpClient();
 
-            var disco = await client.GetDiscoveryDocumentAsync("https://localhost:5001");
+            var disco = await client.GetDiscoveryDocumentAsync("http://localhost:5000");
             if (disco.IsError)
             {
-                Console.WriteLine(DownloadStringCompletedEventArgs.Error);
+                Console.WriteLine(disco.Error);
                 return;
             }
             
@@ -38,10 +40,13 @@ namespace Client
             Console.WriteLine("\n\n");
             
             // call api
-            var apiClient = new HttpClient();
+            HttpClientHandler clientHandler = new HttpClientHandler();
+            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+            
+            var apiClient = new HttpClient(clientHandler);
             apiClient.SetBearerToken(tokenResponse.AccessToken);
 
-            var response = await apiClient.GetAsync("https://localhost:7233/identity");
+            var response = await apiClient.GetAsync("http://localhost:5188/identity");
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine(response.StatusCode);
